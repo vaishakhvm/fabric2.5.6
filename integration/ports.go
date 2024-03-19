@@ -38,7 +38,6 @@ const (
 	PKCS11Port
 	PluggableBasePort
 	PrivateDataBasePort
-	PrivateDataPurgeBasePort
 	RaftBasePort
 	SBEBasePort
 )

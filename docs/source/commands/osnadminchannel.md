@@ -56,7 +56,7 @@ Subcommands:
     channel.
 
   channel remove --channelID=CHANNELID
-    Remove a channel from an Ordering Service Node (OSN).
+    Remove an Ordering Service Node (OSN) from a channel.
 ```
 
 
@@ -119,7 +119,7 @@ Flags:
 ```
 usage: osnadmin channel remove --channelID=CHANNELID
 
-Remove a channel from an Ordering Service Node (OSN).
+Remove an Ordering Service Node (OSN) from a channel.
 
 Flags:
       --help                     Show context-sensitive help (also try

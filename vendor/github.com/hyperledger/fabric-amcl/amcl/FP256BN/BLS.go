@@ -1,5 +1,3 @@
-//go:build !386 && !arm
-
 /*
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -24,6 +22,8 @@ under the License.
 package FP256BN
 
 import "github.com/hyperledger/fabric-amcl/amcl"
+
+
 
 const BFS int = int(MODBYTES)
 const BGS int = int(MODBYTES)

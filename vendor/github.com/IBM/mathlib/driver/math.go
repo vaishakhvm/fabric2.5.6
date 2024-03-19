@@ -20,34 +20,25 @@ type Curve interface {
 	GenG2() G2
 	GenGt() Gt
 	GroupOrder() Zr
-	CoordinateByteSize() int
-	G1ByteSize() int
-	CompressedG1ByteSize() int
-	G2ByteSize() int
-	CompressedG2ByteSize() int
-	ScalarByteSize() int
+	FieldBytes() int
 	NewG1() G1
 	NewG2() G2
+	NewG1FromCoords(ix, iy Zr) G1
 	NewZrFromBytes(b []byte) Zr
 	NewZrFromInt(i int64) Zr
 	NewG1FromBytes(b []byte) G1
-	NewG1FromCompressed(b []byte) G1
 	NewG2FromBytes(b []byte) G2
-	NewG2FromCompressed(b []byte) G2
 	NewGtFromBytes(b []byte) Gt
 	ModAdd(a, b, m Zr) Zr
 	ModSub(a, b, m Zr) Zr
 	HashToZr(data []byte) Zr
 	HashToG1(data []byte) G1
-	HashToG1WithDomain(data, domain []byte) G1
 	NewRandomZr(rng io.Reader) Zr
 	Rand() (io.Reader, error)
 }
 
 type Zr interface {
 	Plus(Zr) Zr
-	Minus(Zr) Zr
-	Mul(Zr) Zr
 	Mod(Zr)
 	PowMod(Zr) Zr
 	InvModP(Zr)
@@ -56,7 +47,6 @@ type Zr interface {
 	Copy() Zr
 	Clone(a Zr)
 	String() string
-	Neg()
 }
 
 type G1 interface {
@@ -67,11 +57,9 @@ type G1 interface {
 	Mul2(e Zr, Q G1, f Zr) G1
 	Equals(G1) bool
 	Bytes() []byte
-	Compressed() []byte
 	Sub(G1)
 	IsInfinity() bool
 	String() string
-	Neg()
 }
 
 type G2 interface {
@@ -82,7 +70,6 @@ type G2 interface {
 	Sub(G2)
 	Affine()
 	Bytes() []byte
-	Compressed() []byte
 	String() string
 	Equals(G2) bool
 }
@@ -94,5 +81,4 @@ type Gt interface {
 	IsUnity() bool
 	ToString() string
 	Bytes() []byte
-	Exp(Zr) Gt
 }

@@ -8,8 +8,9 @@ package bridge
 import (
 	"bytes"
 
+	bccsp "github.com/IBM/idemix/bccsp/schemes"
 	idemix "github.com/IBM/idemix/bccsp/schemes/dlog/crypto"
-	"github.com/IBM/idemix/bccsp/types"
+	"github.com/IBM/idemix/bccsp/schemes/dlog/handlers"
 	math "github.com/IBM/mathlib"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -27,7 +28,7 @@ type Credential struct {
 // a serialised  credential request, and a list of attribute values.
 // Notice that attributes should not contain attributes whose type is IdemixHiddenAttribute
 // cause the credential needs to carry all the attribute values.
-func (c *Credential) Sign(key types.IssuerSecretKey, credentialRequest []byte, attributes []types.IdemixAttribute) (res []byte, err error) {
+func (c *Credential) Sign(key handlers.IssuerSecretKey, credentialRequest []byte, attributes []bccsp.IdemixAttribute) (res []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			res = nil
@@ -49,9 +50,9 @@ func (c *Credential) Sign(key types.IssuerSecretKey, credentialRequest []byte, a
 	attrValues := make([]*math.Zr, len(attributes))
 	for i := 0; i < len(attributes); i++ {
 		switch attributes[i].Type {
-		case types.IdemixBytesAttribute:
+		case bccsp.IdemixBytesAttribute:
 			attrValues[i] = c.Idemix.Curve.HashToZr(attributes[i].Value.([]byte))
-		case types.IdemixIntAttribute:
+		case bccsp.IdemixIntAttribute:
 			var value int64
 			if v, ok := attributes[i].Value.(int); ok {
 				value = int64(v)
@@ -78,7 +79,7 @@ func (c *Credential) Sign(key types.IssuerSecretKey, credentialRequest []byte, a
 // in input the user secret key (sk), the issuer public key (ipk), the serialised credential (credential),
 // and a list of attributes. The list of attributes is optional, in case it is specified, Verify
 // checks that the credential carries the specified attributes.
-func (c *Credential) Verify(sk *math.Zr, ipk types.IssuerPublicKey, credential []byte, attributes []types.IdemixAttribute) (err error) {
+func (c *Credential) Verify(sk *math.Zr, ipk handlers.IssuerPublicKey, credential []byte, attributes []bccsp.IdemixAttribute) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.Errorf("failure [%s]", r)
@@ -98,13 +99,13 @@ func (c *Credential) Verify(sk *math.Zr, ipk types.IssuerPublicKey, credential [
 
 	for i := 0; i < len(attributes); i++ {
 		switch attributes[i].Type {
-		case types.IdemixBytesAttribute:
+		case bccsp.IdemixBytesAttribute:
 			if !bytes.Equal(
 				c.Idemix.Curve.HashToZr(attributes[i].Value.([]byte)).Bytes(),
 				cred.Attrs[i]) {
 				return errors.Errorf("credential does not contain the correct attribute value at position [%d]", i)
 			}
-		case types.IdemixIntAttribute:
+		case bccsp.IdemixIntAttribute:
 			var value int64
 			if v, ok := attributes[i].Value.(int); ok {
 				value = int64(v)
@@ -119,7 +120,7 @@ func (c *Credential) Verify(sk *math.Zr, ipk types.IssuerPublicKey, credential [
 				cred.Attrs[i]) {
 				return errors.Errorf("credential does not contain the correct attribute value at position [%d]", i)
 			}
-		case types.IdemixHiddenAttribute:
+		case bccsp.IdemixHiddenAttribute:
 			continue
 		default:
 			return errors.Errorf("attribute type not allowed or supported [%v] at position [%d]", attributes[i].Type, i)

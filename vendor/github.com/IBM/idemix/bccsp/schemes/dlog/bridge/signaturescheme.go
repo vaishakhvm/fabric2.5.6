@@ -3,15 +3,14 @@ Copyright IBM Corp. All Rights Reserved.
 
 SPDX-License-Identifier: Apache-2.0
 */
-
 package bridge
 
 import (
 	"crypto/ecdsa"
 
+	bccsp "github.com/IBM/idemix/bccsp/schemes"
 	idemix "github.com/IBM/idemix/bccsp/schemes/dlog/crypto"
-	"github.com/IBM/idemix/bccsp/types"
-	bccsp "github.com/IBM/idemix/bccsp/types"
+	"github.com/IBM/idemix/bccsp/schemes/dlog/handlers"
 	math "github.com/IBM/mathlib"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -26,8 +25,8 @@ type SignatureScheme struct {
 // Sign produces an idemix-signature with the respect to the passed serialised credential (cred),
 // user secret key (sk), pseudonym public key (Nym) and secret key (RNym), issuer public key (ipk),
 // and attributes to be disclosed.
-func (s *SignatureScheme) Sign(cred []byte, sk *math.Zr, Nym *math.G1, RNym *math.Zr, ipk types.IssuerPublicKey, attributes []bccsp.IdemixAttribute,
-	msg []byte, rhIndex, eidIndex int, criRaw []byte, sigType bccsp.SignatureType, metadata *bccsp.IdemixSignerMetadata) (res []byte, meta *bccsp.IdemixSignerMetadata, err error) {
+func (s *SignatureScheme) Sign(cred []byte, sk *math.Zr, Nym *math.G1, RNym *math.Zr, ipk handlers.IssuerPublicKey, attributes []bccsp.IdemixAttribute,
+	msg []byte, rhIndex, eidIndex int, criRaw []byte, sigType bccsp.SignatureType) (res []byte, meta *bccsp.IdemixSignerMetadata, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			res = nil
@@ -69,14 +68,11 @@ func (s *SignatureScheme) Sign(cred []byte, sk *math.Zr, Nym *math.G1, RNym *mat
 		iipk.PK,
 		disclosure,
 		msg,
-		rhIndex,
-		eidIndex,
+		rhIndex, eidIndex,
 		cri,
 		newRandOrPanic(s.Idemix.Curve),
 		s.Translator,
-		sigType,
-		metadata,
-	)
+		sigType)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "failed creating new signature")
 	}
@@ -89,14 +85,12 @@ func (s *SignatureScheme) Sign(cred []byte, sk *math.Zr, Nym *math.G1, RNym *mat
 	return sigBytes, meta, nil
 }
 
-// AuditNymEid Audits the pseudonymous enrollment id of a signature
 func (s *SignatureScheme) AuditNymEid(
-	ipk types.IssuerPublicKey,
+	ipk handlers.IssuerPublicKey,
 	eidIndex int,
 	signature []byte,
 	enrollmentID string,
 	RNymEid *math.Zr,
-	verType bccsp.AuditVerificationType,
 ) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -107,102 +101,30 @@ func (s *SignatureScheme) AuditNymEid(
 	iipk, ok := ipk.(*IssuerPublicKey)
 	if !ok {
 		return errors.Errorf("invalid issuer public key, expected *IssuerPublicKey, got [%T]", ipk)
+	}
+
+	sig := &idemix.Signature{}
+	err = proto.Unmarshal(signature, sig)
+	if err != nil {
+		return err
 	}
 
 	eidAttr := s.Idemix.Curve.HashToZr([]byte(enrollmentID))
 
-	switch verType {
-	case bccsp.AuditExpectSignature:
-		sig := &idemix.Signature{}
-		err = proto.Unmarshal(signature, sig)
-		if err != nil {
-			return err
-		}
-		return sig.AuditNymEid(
-			iipk.PK,
-			eidAttr,
-			eidIndex,
-			RNymEid,
-			s.Idemix.Curve,
-			s.Translator,
-		)
-	case bccsp.AuditExpectEidNymRhNym:
-		fallthrough
-	case bccsp.AuditExpectEidNym:
-		// 1. cast signature to NymEID
-		nymEID := idemix.NymEID(signature)
-		// 2. check audit on nymEID
-		return nymEID.AuditNymEid(
-			iipk.PK,
-			eidAttr,
-			eidIndex,
-			RNymEid,
-			s.Idemix.Curve,
-			s.Translator,
-		)
-	default:
-		return errors.Errorf("invalid audit type [%d]", verType)
-	}
-}
-
-// AuditNymRh Audits the pseudonymous revocation handle of a signature
-func (s *SignatureScheme) AuditNymRh(
-	ipk types.IssuerPublicKey,
-	rhIndex int,
-	signature []byte,
-	revocationHandle string,
-	RNymRh *math.Zr,
-	verType bccsp.AuditVerificationType,
-) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = errors.Errorf("failure [%s]", r)
-		}
-	}()
-
-	iipk, ok := ipk.(*IssuerPublicKey)
-	if !ok {
-		return errors.Errorf("invalid issuer public key, expected *IssuerPublicKey, got [%T]", ipk)
-	}
-
-	rhAttr := s.Idemix.Curve.HashToZr([]byte(revocationHandle))
-
-	switch verType {
-	case bccsp.AuditExpectSignature:
-		sig := &idemix.Signature{}
-		err = proto.Unmarshal(signature, sig)
-		if err != nil {
-			return err
-		}
-		return sig.AuditNymRh(
-			iipk.PK,
-			rhAttr,
-			rhIndex,
-			RNymRh,
-			s.Idemix.Curve,
-			s.Translator,
-		)
-	case bccsp.AuditExpectEidNymRhNym:
-		// 1. cast signature to NymRH
-		nymRH := idemix.NymRH(signature)
-		// 2. check audit on nymRH
-		return nymRH.AuditNymRh(
-			iipk.PK,
-			rhAttr,
-			rhIndex,
-			RNymRh,
-			s.Idemix.Curve,
-			s.Translator,
-		)
-	default:
-		return errors.Errorf("invalid audit type [%d]", verType)
-	}
+	return sig.AuditNymEid(
+		iipk.PK,
+		eidAttr,
+		eidIndex,
+		RNymEid,
+		s.Idemix.Curve,
+		s.Translator,
+	)
 }
 
 // Verify checks that an idemix signature is valid with the respect to the passed issuer public key, digest, attributes,
 // revocation index (rhIndex), revocation public key, and epoch.
 func (s *SignatureScheme) Verify(
-	ipk types.IssuerPublicKey,
+	ipk handlers.IssuerPublicKey,
 	signature, digest []byte,
 	attributes []bccsp.IdemixAttribute,
 	rhIndex, eidIndex int,
@@ -227,6 +149,7 @@ func (s *SignatureScheme) Verify(
 	if err != nil {
 		return err
 	}
+
 	disclosure := make([]byte, len(attributes))
 	attrValues := make([]*math.Zr, len(attributes))
 	for i := 0; i < len(attributes); i++ {

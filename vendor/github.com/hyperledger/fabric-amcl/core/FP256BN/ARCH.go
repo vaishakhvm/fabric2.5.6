@@ -1,5 +1,3 @@
-//go:build !386 && !arm
-
 /*
  * Copyright (c) 2012-2020 MIRACL UK Ltd.
  *

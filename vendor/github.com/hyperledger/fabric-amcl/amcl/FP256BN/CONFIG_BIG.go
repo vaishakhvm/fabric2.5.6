@@ -1,5 +1,3 @@
-//go:build !386 && !arm
-
 package FP256BN
 
 // BIG length in bytes and number base
@@ -15,3 +13,4 @@ const HMASK Chunk = ((Chunk(1) << HBITS) - 1)
 const NEXCESS int = (1 << (uint(CHUNK) - BASEBITS - 1))
 
 const BIGBITS int = int(MODBYTES * 8)
+

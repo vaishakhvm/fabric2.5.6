@@ -1,5 +1,3 @@
-//go:build !386 && !arm
-
 /*
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -22,6 +20,7 @@ under the License.
 /* Elliptic Curve API high-level functions  */
 
 package FP256BN
+
 
 import "github.com/hyperledger/fabric-amcl/amcl"
 

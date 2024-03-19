@@ -64,7 +64,7 @@ peer:
       pushAckTimeout: 3s
       btlPullMargin: 10
       reconcileBatchSize: 10
-      reconcileSleepInterval: 5s
+      reconcileSleepInterval: 10s
       reconciliationEnabled: true
       skipPullingInvalidTransactionsDuringCommit: false
       implicitCollectionDisseminationPolicy:

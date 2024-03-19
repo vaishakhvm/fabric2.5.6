@@ -27,9 +27,7 @@ var (
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	// need to use the same "generic" build tag for peer as is used for the plugins.
-	// "generic" build tag on the plugins is a workaround to ensure github.com/kilic/bls12-381 dependency compiles on amd64, see pluggable_test.go compilePlugin()
-	buildServer = nwo.NewBuildServer("-tags=generic")
+	buildServer = nwo.NewBuildServer()
 	buildServer.Serve()
 
 	components = buildServer.Components()

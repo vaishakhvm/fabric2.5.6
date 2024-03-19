@@ -1,5 +1,3 @@
-//go:build !386 && !arm
-
 /*
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -24,6 +22,8 @@ under the License.
 /* FP2 elements are of the form a+ib, where i is sqrt(-1) */
 
 package FP256BN
+
+
 
 type FP2 struct {
 	a *FP
